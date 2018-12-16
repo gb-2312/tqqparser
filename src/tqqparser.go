@@ -522,6 +522,7 @@ func checkMedia(saving_path string, online_url string) {
 		log.Fatal(err)
 		wasDownloadFile = false
 	}
+
 	if file_exists {
 		fmt.Println(fmt.Sprintf(FILE_ALREADY_EXISTS_TIPS_TIPS, saving_path))
 		wasDownloadFile = false
@@ -543,6 +544,7 @@ func checkMedia(saving_path string, online_url string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer resp.Body.Close()
 
 	io.Copy(out, resp.Body)
