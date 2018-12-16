@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -61,7 +62,10 @@ const (
 	CNF_FILE_EXISTS_TIPS                     = "请确认是否已经存在设定: settings.cnf?"
 	CNF_FILE_WAS_RIGHT_TIPS                  = "请确认是否已经正确设定配置数值: settings.cnf?"
 	CNF_FORMAT_ERROR_TIPS                    = "设置的数值格式错误:%T \n"
+	FILE_ALREADY_EXISTS_TIPS_TIPS            = "文件已经存在: %s"
 	DEFAULT_SETTINGS_CNF_PATH                = "./settings.cnf"
+	MEDIA_FOLDER_NAME                        = "multimedia"
+	PICTURE_SAVING_SIZE                      = "2000"
 )
 
 // 定义变量
@@ -251,7 +255,10 @@ func (page *Page) getHtmlItem(item PageItem) string {
 	//
 	if item.Image != nil {
 		for _, unit := range item.Image {
-			currentBuf.append("<img src='").append(unit).append("/460' /><br />")
+			pic_url := unit + NORMAL_SLASHES + PICTURE_SAVING_SIZE
+			saving_path := getMediaFolder() + getOsSlashes() + getImgName(unit)
+			checkAndWriteMedia(getMediaFolder(), saving_path, pic_url)
+			currentBuf.append("<img src='").append(pic_url).append("' /><br />")
 		}
 	}
 	//
@@ -277,6 +284,13 @@ func (page *Page) getHtmlItem(item PageItem) string {
 		currentBuf.append("</strong>")
 	}
 	return currentBuf.String()
+}
+
+// 根据pic_url获取图片名称
+// @param pic_url 图片资源地址(不包含大小/2000)
+// @return 实际保存的完整文件名称
+func getImgName(unit string) string {
+	return unit[strings.LastIndex(unit, NORMAL_SLASHES) : len(unit)-1]
 }
 
 // 获取json格式的内容
@@ -420,27 +434,38 @@ func (parser *TQQParser) WriteData(data_type DataType) {
 		return
 	}
 
-	folder_path := dotStrWithOsSlashes() + cnf.dict.GetStr("USERNAME")
-	file_path := folder_path + getOsSlashes() + int2String(parser.page.pageNumber) + "." + string(data_type)
+	folder_path := getSavingRootFolder()
+	file_path := folder_path + getOsSlashes() + int2String(parser.page.pageNumber) + DOT_STR + string(data_type)
 
-	parser.checkAndWriteMedia(folder_path, file_path, content)
+	checkAndWriteData(folder_path, file_path, content)
 
 	// if success, than page-number +1
 	parser.page.incPageNumber()
 }
 
-// 检查 AND 写入为媒体文件
+// 检查 AND 写入为Data文件
 // @param folder_path 保存的目录
 // @param file_path 文件保存位置
 // @param content 文件写入内容
-func (parser *TQQParser) checkAndWriteMedia(folder_path string, file_path string, content string) {
-	parser.checkFolder(folder_path)
-	parser.checkFile(file_path, content)
+func checkAndWriteData(folder_path string, file_path string, content string) {
+	checkFolder(folder_path)
+	checkFile(file_path, content)
+}
+
+// 检查 AND 写入为Data文件
+// @param folder_path 保存的目录
+// @param saving_path 文件保存位置
+// @param online_url url地址
+func checkAndWriteMedia(folder_path string, saving_path string, online_url string) {
+	// check
+	checkFolder(getSavingRootFolder())
+	checkFolder(folder_path)
+	checkMedia(saving_path, online_url)
 }
 
 // 检测/创建目标文件夹/目录
 // @param folder_path 下载位置
-func (parser *TQQParser) checkFolder(folder_path string) {
+func checkFolder(folder_path string) {
 	// 检查路径, 如果不存在, 则创建
 	path_exist, err := pathExists(folder_path)
 	if err != nil {
@@ -461,7 +486,7 @@ func (parser *TQQParser) checkFolder(folder_path string) {
 // 检测/创建目标文件
 // @param file_path 完整目录位置
 // @param content 写入内容
-func (parser *TQQParser) checkFile(file_path string, content string) {
+func checkFile(file_path string, content string) {
 	// 是否要下载该文件
 	wasWriteFile := true
 
@@ -482,6 +507,57 @@ func (parser *TQQParser) checkFile(file_path string, content string) {
 
 	fmt.Printf(WRITE_FILE_TIPS, file_path)
 	writeFile([]byte(content), file_path)
+}
+
+// 检测/下载media文件
+// @param saving_path 保存位置
+// @param online_url url地址
+func checkMedia(saving_path string, online_url string) {
+	// 是否要下载该文件
+	wasDownloadFile := true
+
+	// 检查即将写入的下载文件, 如果存在, 则忽略; 否则下载并写入该空的文件中
+	file_exists, err := pathExists(saving_path)
+	if err != nil {
+		log.Fatal(err)
+		wasDownloadFile = false
+	}
+	if file_exists {
+		fmt.Println(fmt.Sprintf(FILE_ALREADY_EXISTS_TIPS_TIPS, saving_path))
+		wasDownloadFile = false
+	}
+
+	if !wasDownloadFile {
+		return
+	}
+
+	// download_file(prepared to write byte[] data)
+	out, err := os.Create(saving_path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
+
+	// 此处使用普通的Get下载
+	resp, err := http.Get(online_url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	io.Copy(out, resp.Body)
+}
+
+// 获取保存的根目录(以`username`作为基准)
+// @return 保存的根目录
+func getSavingRootFolder() string {
+	return dotStrWithOsSlashes() + cnf.dict.GetStr("USERNAME")
+}
+
+// 获取保存Media的根目录(以`username`作为基准)
+// @return 保存Media的根目录
+func getMediaFolder() string {
+	return getSavingRootFolder() + getOsSlashes() + MEDIA_FOLDER_NAME
 }
 
 // returns a non-negative pseudo-random 31-bit integer as an int32
@@ -730,7 +806,9 @@ func (conf *Config) init() {
 	}
 
 	for _, v := range cnf_vals {
-		if strings.Index(v, EQUAL_SIGN) == -1 {
+		if v == EMPTY_STR {
+			continue
+		} else if strings.Index(v, EQUAL_SIGN) == -1 {
 			log.Fatalf(CNF_FORMAT_ERROR_TIPS, v)
 			return
 		} else if strings.Index(v, HASH_SIGN) == 0 {
