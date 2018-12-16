@@ -1,0 +1,4 @@
+USERNAME=input_your_username
+GLOBAL_TOKEN=input_your_token
+DEFAULT_COOKIES=input_your_cookies
+EXPORT_DATA_TYPE=JSON
