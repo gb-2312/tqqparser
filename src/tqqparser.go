@@ -38,7 +38,7 @@ const (
 	EQUAL_SIGN         = "="
 	HASH_SIGN          = "#"
 
-	DEFAULT_PAGE_NUMBER         = 254
+	DEFAULT_PAGE_NUMBER         = 1
 	DEFAULT_TOPIC_ID            = "600000000000000"
 	DEFAULT_MAX_RETRY_COUNT     = 20
 	DEFAULT_RETRY_SLEEP_SECONDS = time.Second * 2
