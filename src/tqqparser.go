@@ -38,8 +38,8 @@ const (
 	EQUAL_SIGN         = "="
 	HASH_SIGN          = "#"
 
-	DEFAULT_PAGE_NUMBER         = 1
-	DEFAULT_TOPIC_ID            = "500000000000000"
+	DEFAULT_PAGE_NUMBER         = 254
+	DEFAULT_TOPIC_ID            = "600000000000000"
 	DEFAULT_MAX_RETRY_COUNT     = 20
 	DEFAULT_RETRY_SLEEP_SECONDS = time.Second * 2
 	DEFAULT_USER_AGENT          = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Mobile Safari/537.36"
@@ -435,7 +435,7 @@ func (parser *TQQParser) WriteData(data_type DataType) {
 	}
 
 	folder_path := getSavingRootFolder()
-	file_path := folder_path + getOsSlashes() + int2String(parser.page.pageNumber) + DOT_STR + string(data_type)
+	file_path := folder_path + getOsSlashes() + int2String(parser.page.pageNumber+1) + DOT_STR + string(data_type)
 
 	checkAndWriteData(folder_path, file_path, content)
 
