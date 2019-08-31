@@ -435,7 +435,8 @@ func (parser *TQQParser) WriteData(data_type DataType) {
 	}
 
 	folder_path := getSavingRootFolder()
-	file_path := folder_path + getOsSlashes() + int2String(parser.page.pageNumber+1) + DOT_STR + string(data_type)
+	file_path := folder_path + getOsSlashes() + int2String(parser.page.pageNumber+1) + DOT_STR +
+		strings.ToLower(string(data_type))
 
 	checkAndWriteData(folder_path, file_path, content)
 
