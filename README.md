@@ -15,4 +15,3 @@ And type this:
     go run tqqparser.go
 
 If you found something wrong, please contact [Angel's Blog.](http://www.0ee.com/about), that would be very friendly of you, thank you!
-
